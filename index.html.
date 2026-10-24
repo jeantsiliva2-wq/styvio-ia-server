@@ -13,7 +13,7 @@
       color: white;
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      height: 100dvh;
     }
     header {
       padding: 18px;
@@ -33,6 +33,7 @@
       border-radius: 12px;
       background: #253149;
       white-space: pre-wrap;
+      overflow-wrap: anywhere;
     }
     .user { background: #245caa; }
     form {
@@ -55,36 +56,77 @@
       background: #4385f5;
       color: white;
     }
+    button:disabled { opacity: 0.6; }
   </style>
 </head>
 <body>
   <header>STYVIO IA</header>
-  <div id="chat">
+
+  <div id="chat" aria-live="polite">
     <div class="msg">Salama! Izaho no STYVIO IA. Inona no azoko anampiana anao?</div>
   </div>
+
   <form id="form">
     <input id="question" placeholder="Soraty eto ny hafatra..." required>
-    <button type="submit">Alefa</button>
+    <button id="send" type="submit">Alefa</button>
   </form>
+
   <script>
     const form = document.getElementById('form');
     const chat = document.getElementById('chat');
     const question = document.getElementById('question');
+    const send = document.getElementById('send');
+
+    const API_URL = 'https://styvio-ia-server.onrender.com/chat';
+
+    function addMessage(text, isUser = false) {
+      const div = document.createElement('div');
+      div.className = isUser ? 'msg user' : 'msg';
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+      return div;
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+
       const message = question.value.trim();
       if (!message) return;
 
-      chat.innerHTML += '<div class="msg user"></div>';
-      chat.lastElementChild.textContent = message;
+      addMessage(message, true);
       question.value = '';
+      question.disabled = true;
+      send.disabled = true;
 
-      const reply = document.createElement('div');
-      reply.className = 'msg';
-      reply.textContent = 'Mbola hampifandraisina amin’ny serveur IA aho.';
-      chat.appendChild(reply);
-      chat.scrollTop = chat.scrollHeight;
+      const reply = addMessage('Miandry valiny...');
+      
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ question: message })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Nisy olana tamin’ny serveur.');
+        }
+
+        reply.textContent = data.answer || 'Tsy nahazo valiny ny IA.';
+      } catch (error) {
+        reply.textContent =
+          'Tsy afaka nahazo valiny. Jereo ny connexion Internet na ny serveur Render. Antsipiriany: ' +
+          error.message;
+      } finally {
+        question.disabled = false;
+        send.disabled = false;
+        question.focus();
+        chat.scrollTop = chat.scrollHeight;
+      }
     });
   </script>
 </body>
