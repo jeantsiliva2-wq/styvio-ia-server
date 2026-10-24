@@ -1,0 +1,91 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STYVIO IA</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #101522;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      padding: 18px;
+      background: #19243a;
+      text-align: center;
+      font-size: 23px;
+      font-weight: bold;
+    }
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .msg {
+      margin: 10px 0;
+      padding: 12px;
+      border-radius: 12px;
+      background: #253149;
+      white-space: pre-wrap;
+    }
+    .user { background: #245caa; }
+    form {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      background: #19243a;
+    }
+    input {
+      flex: 1;
+      min-width: 0;
+      padding: 13px;
+      border-radius: 10px;
+      border: 0;
+    }
+    button {
+      padding: 12px;
+      border: 0;
+      border-radius: 10px;
+      background: #4385f5;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <header>STYVIO IA</header>
+  <div id="chat">
+    <div class="msg">Salama! Izaho no STYVIO IA. Inona no azoko anampiana anao?</div>
+  </div>
+  <form id="form">
+    <input id="question" placeholder="Soraty eto ny hafatra..." required>
+    <button type="submit">Alefa</button>
+  </form>
+  <script>
+    const form = document.getElementById('form');
+    const chat = document.getElementById('chat');
+    const question = document.getElementById('question');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = question.value.trim();
+      if (!message) return;
+
+      chat.innerHTML += '<div class="msg user"></div>';
+      chat.lastElementChild.textContent = message;
+      question.value = '';
+
+      const reply = document.createElement('div');
+      reply.className = 'msg';
+      reply.textContent = 'Mbola hampifandraisina amin’ny serveur IA aho.';
+      chat.appendChild(reply);
+      chat.scrollTop = chat.scrollHeight;
+    });
+  </script>
+</body>
+</html>
