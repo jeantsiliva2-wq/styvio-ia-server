@@ -52,11 +52,12 @@ Ianao dia STYVIO IA, mpanampy IA mahay sy sariaka.
         });
 
     } catch (error) {
-        console.error(error);
+    console.error("OPENAI ERROR:", error);
 
-        res.status(500).json({
-            error: "Nisy olana tamin'ny serveur."
-        });
+    res.status(500).json({
+        error: error.message || "Nisy olana tamin'ny serveur."
+    });
+    }
     }
 });
 
