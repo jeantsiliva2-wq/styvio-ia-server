@@ -25,7 +25,7 @@ app.post("/chat", async (req, res) => {
 
         
 const response = await client.responses.create({
-    model: "gpt-6-luna",
+    model: "gpt-5-mini",
 
     instructions: `
 Ianao dia STYVIO IA, mpanampy IA mahay sy sariaka.
