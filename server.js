@@ -14,7 +14,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/chat", async (req, res) => {
-    try {
+    try {console.log("CHAT REQUEST RECEIVED:", req.body);
         const question = req.body.question;
 
         if (!question || !question.trim()) {
