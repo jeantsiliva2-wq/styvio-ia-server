@@ -54,13 +54,16 @@ ${question}
 
         const data = await response.json();
 
-        console.log("GEMINI RESPONSE:", data);
+console.log("GEMINI HTTP STATUS:", response.status);
+console.log("GEMINI RESPONSE:", JSON.stringify(data, null, 2));
 
-        if (!response.ok) {
-            throw new Error(
-                data?.error?.message || "Gemini API error"
-            );
-        }
+if (!response.ok) {
+    throw new Error(
+        `Gemini API HTTP ${response.status}: ${
+            data?.error?.message || JSON.stringify(data)
+        }`
+    );
+}
 
         res.json({
             answer: data.output_text || "Tsy nahazo valiny avy amin'ny Gemini."
