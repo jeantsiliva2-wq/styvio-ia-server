@@ -65,9 +65,21 @@ if (!response.ok) {
     );
 }
 
-        res.json({
-            answer: data.output_text || "Tsy nahazo valiny avy amin'ny Gemini."
-        });
+
+const answer =
+    data.output_text ||
+    data.steps
+        ?.filter(step => step.type === "model_output")
+        .flatMap(step => step.content || [])
+        .filter(item => item.type === "text")
+        .map(item => item.text)
+        .join("\n")
+        .trim();
+
+res.json({
+    answer: answer || "Tsy nahazo valiny avy amin'ny Gemini."
+});
+
 
     } catch (error) {
         console.error("GEMINI ERROR:", error);
