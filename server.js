@@ -1,7 +1,7 @@
-    import express from "express";
+    
+import express from "express";
 
 const app = express();
-
 app.use(express.json());
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -22,17 +22,15 @@ app.post("/chat", async (req, res) => {
             });
         }
 
-        const response = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/interactions",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": GEMINI_API_KEY
-                },
-                body: JSON.stringify({
-                    model: "gemini-3.8-flash",
-                    input: `
+        if (!GEMINI_API_KEY) {
+            return res.status(500).json({
+                error: "Tsy hita ny GEMINI_API_KEY ao amin'ny serveur."
+            });
+        }
+
+        const requestBody = JSON.stringify({
+            model: "gemini-3.8-flash",
+            input: `
 Ianao dia STYVIO IA, mpanampy IA mahay sy sariaka.
 
 - Valio araka ny fanontanian'ny olona.
@@ -48,43 +46,82 @@ Ianao dia STYVIO IA, mpanampy IA mahay sy sariaka.
 Fanontaniana:
 ${question}
 `
-                })
+        });
+
+        let response;
+        let data;
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+            response = await fetch(
+                "https://generativelanguage.googleapis.com/v1beta/interactions",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-goog-api-key": GEMINI_API_KEY
+                    },
+                    body: requestBody
+                }
+            );
+
+            data = await response.json();
+
+            console.log(
+                "GEMINI HTTP STATUS:",
+                response.status
+            );
+
+            if (response.ok) {
+                break;
             }
+
+            console.error(
+                "GEMINI ERROR RESPONSE:",
+                JSON.stringify(data)
+            );
+
+            const retryable =
+                response.status === 503 ||
+                response.status === 429 ||
+                response.status >= 500;
+
+            if (!retryable || attempt === 2) {
+                return res.status(502).json({
+                    error: `Gemini API HTTP ${response.status}: ${
+                        data?.error?.message ||
+                        "Tsy afaka namaly ny Gemini."
+                    }`
+                });
+            }
+
+            await new Promise(resolve =>
+                setTimeout(resolve, 2000 * (attempt + 1))
+            );
+        }
+
+        const answer =
+            data?.output_text ||
+            data?.steps
+                ?.filter(step => step.type === "model_output")
+                .flatMap(step => step.content || [])
+                .filter(item => item.type === "text")
+                .map(item => item.text)
+                .join("\n")
+                .trim();
+
+        console.log(
+            "GEMINI ANSWER RECEIVED:",
+            Boolean(answer)
         );
 
-        const data = await response.json();
-
-console.log("GEMINI HTTP STATUS:", response.status);
-console.log("GEMINI RESPONSE:", JSON.stringify(data, null, 2));
-
-if (!response.ok) {
-    throw new Error(
-        `Gemini API HTTP ${response.status}: ${
-            data?.error?.message || JSON.stringify(data)
-        }`
-    );
-}
-
-
-const answer =
-    data.output_text ||
-    data.steps
-        ?.filter(step => step.type === "model_output")
-        .flatMap(step => step.content || [])
-        .filter(item => item.type === "text")
-        .map(item => item.text)
-        .join("\n")
-        .trim();
-
-res.json({
-    answer: answer || "Tsy nahazo valiny avy amin'ny Gemini."
-});
-
+        return res.json({
+            answer: answer || "Tsy nahazo valiny avy amin'ny Gemini."
+        });
 
     } catch (error) {
         console.error("GEMINI ERROR:", error);
 
-        res.status(500).json({
+        return res.status(500).json({
             error: error.message || "Nisy olana tamin'ny serveur."
         });
     }
