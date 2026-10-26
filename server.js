@@ -1,20 +1,19 @@
-import express from "express";
-import OpenAI from "openai";
+    import express from "express";
 
 const app = express();
 
 app.use(express.json());
 
-const client = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-});
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 app.get("/", (req, res) => {
     res.send("STYVIO IA server is running!");
 });
 
 app.post("/chat", async (req, res) => {
-    try {console.log("CHAT REQUEST RECEIVED:", req.body);
+    try {
+        console.log("CHAT REQUEST RECEIVED:", req.body);
+
         const question = req.body.question;
 
         if (!question || !question.trim()) {
@@ -23,41 +22,56 @@ app.post("/chat", async (req, res) => {
             });
         }
 
-        
-const response = await client.responses.create({
-    model: "gpt-5-mini",
-
-    instructions: `
+        const response = await fetch(
+            "https://generativelanguage.googleapis.com/v1beta/interactions",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": GEMINI_API_KEY
+                },
+                body: JSON.stringify({
+                    model: "gemini-3.8-flash",
+                    input: `
 Ianao dia STYVIO IA, mpanampy IA mahay sy sariaka.
 
-- Valio araka ny tena fanontanian'ny olona.
-- Raha teny Malagasy no ampiasainy, valio amin'ny teny Malagasy.
-- Raha teny français no ampiasainy, valio amin'ny français.
-- Mahay manazava lesona, manampy amin'ny droit, matematika,
-  siansa, informatique, programmation ary asa famoronana.
-- Raha mangataka fanazavana ny olona, hazavao tsikelikely
-  amin'ny teny mora azo ary omeo ohatra.
+- Valio araka ny fanontanian'ny olona.
+- Raha teny Malagasy no ampiasaina, valio amin'ny teny Malagasy.
+- Raha français, valio amin'ny français.
+- Mahay manampy amin'ny droit, matematika, siansa,
+  informatique, programmation ary asa famoronana.
+- Hazavao tsikelikely rehefa ilaina.
+- Omeo ohatra rehefa manampy amin'ny fahazoana ilay lesona.
 - Raha fanontaniana tsotra, valio mivantana.
-- Raha misy zavatra tsy azonao antoka, lazao am-pahatsorana.
-- Aza mamorona vaovao na milaza fa nanao zavatra tsy nataonao.
-- Miresaha am-pitiavana sy am-panajana, toy ny mpanampy
-  vonona hanampy amin'ny resaka mitohy.
-`,
+- Aza mamorona vaovao.
 
-    input: question
-});
-        
+Fanontaniana:
+${question}
+`
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        console.log("GEMINI RESPONSE:", data);
+
+        if (!response.ok) {
+            throw new Error(
+                data?.error?.message || "Gemini API error"
+            );
+        }
+
         res.json({
-            answer: response.output_text
+            answer: data.output_text || "Tsy nahazo valiny avy amin'ny Gemini."
         });
 
     } catch (error) {
-    console.error("OPENAI ERROR:", error);
+        console.error("GEMINI ERROR:", error);
 
-    res.status(500).json({
-        error: error.message || "Nisy olana tamin'ny serveur."
-    });
-    }
+        res.status(500).json({
+            error: error.message || "Nisy olana tamin'ny serveur."
+        });
     }
 });
 
