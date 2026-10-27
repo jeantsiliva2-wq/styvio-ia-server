@@ -1,3 +1,4 @@
+
 import express from "express";
 
 const app = express();
@@ -19,13 +20,13 @@ app.get("/test", (req, res) => {
     });
 });
 
-// Manomboka mamorona hira
+// 1. Manomboka mamorona hira
 app.post("/generate", async (req, res) => {
     try {
         if (!API_KEY) {
             return res.status(500).json({
                 success: false,
-                error: "MUSICAPI_API_KEY tsy voapetraka ao amin'ny serveur."
+                error: "MUSICAPI_API_KEY tsy voapetraka."
             });
         }
 
@@ -68,17 +69,15 @@ app.post("/generate", async (req, res) => {
 
             return res.status(502).json({
                 success: false,
-                error: result.error ||
-                    result.message ||
-                    "Tsy nahomby ny fanombohana ny famoronana hira."
+                error: result.message ||
+                    result.error ||
+                    "Tsy nahomby ny fanombohana hira."
             });
         }
 
-        // Averina ny task_id mba hahafahan'ny app
-        // manara-maso ny fandrosoan'ny hira.
         return res.json({
             success: true,
-            message: "Efa natomboka ny famoronana hira.",
+            message: "Natomboka ny famoronana hira.",
             title,
             style,
             task_id: result.task_id,
@@ -96,7 +95,7 @@ app.post("/generate", async (req, res) => {
     }
 });
 
-// Manamarina raha efa vita ilay hira
+// 2. Manara-maso ny famoronana hira
 app.get("/task/:taskId", async (req, res) => {
     try {
         if (!API_KEY) {
@@ -127,7 +126,7 @@ app.get("/task/:taskId", async (req, res) => {
         const result = await response.json();
 
         if (!response.ok) {
-            console.error("TASK ERROR:", result);
+            console.error("MUSICAPI TASK ERROR:", result);
 
             return res.status(502).json({
                 success: false,
@@ -144,12 +143,14 @@ app.get("/task/:taskId", async (req, res) => {
                 : [];
 
         const song = songs.find(
-            item => item.audio_url || item.audioUrl
+            item => item &&
+                (item.audio_url || item.audioUrl)
         );
 
         const status = String(
             result.status ||
             result.data?.status ||
+            result.data?.[0]?.status ||
             (song ? "succeeded" : "pending")
         ).toLowerCase();
 
@@ -167,7 +168,12 @@ app.get("/task/:taskId", async (req, res) => {
             });
         }
 
-        if (song) {
+        if (
+            (status === "succeeded" ||
+             status === "completed" ||
+             status === "success") &&
+            song
+        ) {
             return res.json({
                 success: true,
                 status: "succeeded",
@@ -189,11 +195,13 @@ app.get("/task/:taskId", async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            error: "Nisy olana tamin'ny fanaraha-maso ny hira."
+            error: "Nisy olana tamin'ny fanaraha-maso."
         });
     }
 });
 
 app.listen(PORT, () => {
-    console.log(`STYVIO MUSIC server running on port ${PORT}`);
+    console.log(
+        `STYVIO MUSIC server running on port ${PORT}`
+    );
 });
