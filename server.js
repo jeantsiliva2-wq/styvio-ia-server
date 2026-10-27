@@ -1,134 +1,82 @@
-    
 import express from "express";
 
 const app = express();
+
 app.use(express.json());
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const PORT = process.env.PORT || 3000;
 
 app.get("/", (req, res) => {
-    res.send("STYVIO IA server is running!");
+    res.send("STYVIO MUSIC server is running!");
 });
 
-app.post("/chat", async (req, res) => {
+// Test endpoint
+app.get("/test", (req, res) => {
+    res.json({
+        success: true,
+        message: "STYVIO MUSIC serveur fonctionne."
+    });
+});
+
+// Music generation endpoint
+app.post("/generate", async (req, res) => {
     try {
-        console.log("CHAT REQUEST RECEIVED:", req.body);
 
-        const question = req.body.question;
+        console.log("MUSIC REQUEST:", req.body);
 
-        if (!question || !question.trim()) {
+        const title = req.body.title;
+        const lyrics = req.body.lyrics;
+        const style = req.body.style;
+
+        if (!title || !title.trim()) {
             return res.status(400).json({
-                error: "Fanontaniana tsy misy."
+                error: "Titre tsy misy."
             });
         }
 
-        if (!GEMINI_API_KEY) {
-            return res.status(500).json({
-                error: "Tsy hita ny GEMINI_API_KEY ao amin'ny serveur."
+        if (!lyrics || !lyrics.trim()) {
+            return res.status(400).json({
+                error: "Paroles na description tsy misy."
             });
         }
 
-        const requestBody = JSON.stringify({
-            model: "gemini-3.8-flash",
-            input: `
-Ianao dia STYVIO IA, mpanampy IA mahay sy sariaka.
-
-- Valio araka ny fanontanian'ny olona.
-- Raha teny Malagasy no ampiasaina, valio amin'ny teny Malagasy.
-- Raha français, valio amin'ny français.
-- Mahay manampy amin'ny droit, matematika, siansa,
-  informatique, programmation ary asa famoronana.
-- Hazavao tsikelikely rehefa ilaina.
-- Omeo ohatra rehefa manampy amin'ny fahazoana ilay lesona.
-- Raha fanontaniana tsotra, valio mivantana.
-- Aza mamorona vaovao.
-
-Fanontaniana:
-${question}
-`
-        });
-
-        let response;
-        let data;
-
-        for (let attempt = 0; attempt < 3; attempt++) {
-            response = await fetch(
-                "https://generativelanguage.googleapis.com/v1beta/interactions",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-goog-api-key": GEMINI_API_KEY
-                    },
-                    body: requestBody
-                }
-            );
-
-            data = await response.json();
-
-            console.log(
-                "GEMINI HTTP STATUS:",
-                response.status
-            );
-
-            if (response.ok) {
-                break;
-            }
-
-            console.error(
-                "GEMINI ERROR RESPONSE:",
-                JSON.stringify(data)
-            );
-
-            const retryable =
-                response.status === 503 ||
-                response.status === 429 ||
-                response.status >= 500;
-
-            if (!retryable || attempt === 2) {
-                return res.status(502).json({
-                    error: `Gemini API HTTP ${response.status}: ${
-                        data?.error?.message ||
-                        "Tsy afaka namaly ny Gemini."
-                    }`
-                });
-            }
-
-            await new Promise(resolve =>
-                setTimeout(resolve, 2000 * (attempt + 1))
-            );
+        if (!style || !style.trim()) {
+            return res.status(400).json({
+                error: "Style musical tsy misy."
+            });
         }
 
-        const answer =
-            data?.output_text ||
-            data?.steps
-                ?.filter(step => step.type === "model_output")
-                .flatMap(step => step.content || [])
-                .filter(item => item.type === "text")
-                .map(item => item.text)
-                .join("\n")
-                .trim();
+        console.log("TITLE:", title);
+        console.log("STYLE:", style);
+        console.log("LYRICS:", lyrics);
 
-        console.log(
-            "GEMINI ANSWER RECEIVED:",
-            Boolean(answer)
-        );
+        /*
+         * Eto no hampifandraisina amin'ny
+         * AI Music Generator rehefa voafidy
+         * ny service gratuit mety.
+         */
 
         return res.json({
-            answer: answer || "Tsy nahazo valiny avy amin'ny Gemini."
+            success: true,
+            message: "Configuration reçue.",
+            title: title,
+            style: style,
+            audioUrl: null
         });
 
     } catch (error) {
-        console.error("GEMINI ERROR:", error);
+
+        console.error("MUSIC SERVER ERROR:", error);
 
         return res.status(500).json({
-            error: error.message || "Nisy olana tamin'ny serveur."
+            error: error.message ||
+                "Nisy olana tamin'ny serveur."
         });
     }
 });
 
-const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
-    console.log(`STYVIO IA server running on port ${PORT}`);
-});
+    console.log(
+        `STYVIO MUSIC server running on port ${PORT}`
+    );
+});              
